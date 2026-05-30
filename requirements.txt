@@ -1,0 +1,5 @@
+gymnasium
+numpy
+yfinance
+pandas
+ta
