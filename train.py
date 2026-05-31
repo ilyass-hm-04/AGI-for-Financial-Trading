@@ -66,8 +66,8 @@ DEFAULTS = dict(
     reward_window    = 50,
     # Reward weights
     w_return      = 1.0,
-    w_volatility  = 0.5,
-    w_drawdown    = 2.0,
+    w_volatility  = 0.1,
+    w_drawdown    = 0.5,
     w_transaction = 0.1,
 
     # --- PPO ---
@@ -80,7 +80,7 @@ DEFAULTS = dict(
     gamma            = 0.99,
     gae_lambda       = 0.95,
     clip_range       = 0.2,
-    ent_coef         = 0.01,       # entropy bonus → encourages exploration
+    ent_coef         = 0.05,
     vf_coef          = 0.5,
     max_grad_norm    = 0.5,
     # Network
@@ -120,7 +120,7 @@ def prepare_data(args) -> tuple[dict, dict, object]:
     print(f"  Period  : {args.start_date} -> {args.end_date}")
     print("=" * 60)
 
-    train_data, scaler = pre pare_all(
+    train_data, scaler = prepare_all(
         tickers      = args.train_tickers,
         start        = args.start_date,
         end          = args.end_date,
@@ -233,6 +233,7 @@ def build_model(vec_env, args) -> PPO:
         ent_coef       = args.ent_coef,
         vf_coef        = args.vf_coef,
         max_grad_norm  = args.max_grad_norm,
+        target_kl      = 0.1,           # stop l'update si KL > 0.15 (1.5×0.1) → équilibre stabilité/vitesse
         policy_kwargs  = policy_kwargs,
         tensorboard_log = args.log_dir,
         verbose        = 1,

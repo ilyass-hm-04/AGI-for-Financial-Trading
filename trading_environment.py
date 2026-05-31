@@ -11,7 +11,7 @@ Usage multi-actifs (un marché aléatoire est sélectionné à chaque reset) :
     env = TradingEnv(df=train_data)   # train_data = {"AAPL": df, "MSFT": df, ...}
 
 Reward shaping :
-    Gain brut − Volatilité − Drawdown² − Pénalité de transaction
+    Gain brut − Volatilité − Drawdown − Pénalité de transaction
 """
 
 import numpy as np
@@ -272,7 +272,7 @@ class TradingEnv(gym.Env):
         reward = (
               self.w_return      * step_return
             - self.w_volatility  * sigma
-            - self.w_drawdown    * (drawdown ** 2)
+            - self.w_drawdown    * drawdown
             - self.w_transaction * tx_penalty
         )
 

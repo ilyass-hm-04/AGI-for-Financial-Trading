@@ -61,9 +61,13 @@ def _run_episode(env, model) -> dict:
         if nw > peak:
             peak = nw
 
-    # Sharpe ratio (annualized, assuming daily steps)
-    r = np.array(rewards)
-    sharpe = (r.mean() / (r.std() + 1e-9)) * np.sqrt(252) if len(r) > 1 else 0.0
+    # Sharpe ratio (annualized, from net worth returns — not from penalised rewards)
+    nw_series = np.array(net_worths)
+    if len(nw_series) > 1:
+        daily_rets = np.diff(nw_series) / (nw_series[:-1] + 1e-9)
+        sharpe = (daily_rets.mean() / (daily_rets.std() + 1e-9)) * np.sqrt(252)
+    else:
+        sharpe = 0.0
 
     # Maximum drawdown
     nw_arr = np.array(net_worths)
