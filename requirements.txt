@@ -3,3 +3,9 @@ numpy
 yfinance
 pandas
 ta
+scikit-learn
+stable-baselines3[extra]
+torch
+matplotlib
+tensorboard
+tqdm

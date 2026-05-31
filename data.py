@@ -7,7 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/1d7U0cnDlaSB_ULnqZJWtiglxLFmFmgLi
 """
 
-!pip install ta
 
 import yfinance as yf  #importer les données financier depuis yahoo finance
 import pandas as pd
@@ -76,30 +75,51 @@ def normalize_features(df: pd.DataFrame,scaler: StandardScaler | None = None,fit
 
   return df_feat, scaler
 
-def prepare_all(tickers: list[str],start: str = "2015-01-01",end:str = "2023-12-31",scaler: StandardScaler | None = None,fit_scaler: bool = True):
+def prepare_all(
+    tickers: list[str],
+    start: str = "2015-01-01",
+    end: str = "2023-12-31",
+    scaler: StandardScaler | None = None,
+    fit_scaler: bool = True,
+):
+    """
+    Full pipeline: download → indicators → global normalization.
+
+    Returns
+    -------
+    normalized : dict[str, pd.DataFrame]
+        Each DataFrame contains the 10 normalized feature columns PLUS
+        the original 'Close' column (needed by TradingEnv to compute
+        portfolio value).
+    scaler : StandardScaler
+        The fitted scaler (re-use on test data with fit_scaler=False).
+    """
     raw = download_data(tickers, start, end)
     processed = {}
 
-    all_frames = []
     for ticker, df in raw.items():
         df = add_technical_indicators(df)
         processed[ticker] = df
 
+    # Fit scaler on the concatenation of all training stocks
     if fit_scaler:
-        combined = pd.concat([
-            processed[t][["RSI","MACD","MACD_signal","MACD_diff",
-                           "BB_width","ATR",
-                           "Return_1d","Return_5d","Return_20d","Volume_norm"]]
-            for t in processed
-        ])
+        feature_cols = [
+            "RSI", "MACD", "MACD_signal", "MACD_diff",
+            "BB_width", "ATR",
+            "Return_1d", "Return_5d", "Return_20d", "Volume_norm",
+        ]
+        combined = pd.concat([processed[t][feature_cols] for t in processed])
         scaler = StandardScaler()
         scaler.fit(combined)
 
     normalized = {}
     for ticker, df in processed.items():
+        # Normalize the feature columns
         df_feat, _ = normalize_features(df, scaler=scaler, fit=False)
-        normalized[ticker] = df_feat
+        # Re-attach the raw Close price so the env can compute portfolio value
+        df_feat["Close"] = df["Close"].values
+        normalized[ticker] = df_feat.reset_index(drop=True)
 
     return normalized, scaler
 
-#pipline complet
+# Pipeline complet
